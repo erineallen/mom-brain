@@ -72,7 +72,7 @@ export async function POST(request: Request) {
 }
 
 // GET endpoint to just fetch existing tasks without re-analyzing
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     

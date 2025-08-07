@@ -13,6 +13,20 @@ interface Calendar {
   accessRole?: string
 }
 
+interface GoogleCalendarItem {
+  id: string
+  summary: string
+  backgroundColor?: string
+  primary?: boolean
+  hidden?: boolean
+  selected?: boolean
+  accessRole?: string
+}
+
+interface GoogleCalendarResponse {
+  items: GoogleCalendarItem[]
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -39,8 +53,8 @@ export async function GET() {
       )
     }
 
-    const data = await response.json()
-    const calendars: Calendar[] = (data.items || []).map((cal: any) => ({
+    const data = await response.json() as GoogleCalendarResponse
+    const calendars: Calendar[] = (data.items || []).map((cal: GoogleCalendarItem) => ({
       id: cal.id,
       summary: cal.summary,
       backgroundColor: cal.backgroundColor,

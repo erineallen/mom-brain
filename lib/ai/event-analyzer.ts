@@ -21,6 +21,15 @@ export interface EventAnalysis {
   notes: string;
 }
 
+interface CalendarEvent {
+  id: string;
+  summary?: string;
+  description?: string;
+  location?: string;
+  start: { dateTime?: string; date?: string };
+  end: { dateTime?: string; date?: string };
+}
+
 export async function analyzeCalendarEvent(event: {
   id: string;
   summary?: string;
@@ -131,7 +140,7 @@ Return ONLY a JSON object with this exact structure (no other text):
 }
 
 export async function analyzeBatchEvents(
-  events: any[],
+  events: CalendarEvent[],
   options: { maxConcurrent?: number } = {}
 ): Promise<Map<string, EventAnalysis>> {
   const { maxConcurrent = 3 } = options; // Process 3 at a time to avoid rate limits

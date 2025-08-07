@@ -2,15 +2,24 @@
 import { PrismaClient } from '@prisma/client';
 import { EventAnalysis } from '../ai/event-analyzer';
 
+interface CalendarEvent {
+  id: string;
+  summary?: string;
+  description?: string;
+  location?: string;
+  start: { dateTime?: string; date?: string };
+  end: { dateTime?: string; date?: string };
+}
+
 const prisma = new PrismaClient();
 
 export async function saveAnalyzedEvent(
   householdId: string,
-  event: any,
+  event: CalendarEvent,
   analysis: EventAnalysis
 ) {
-  const startDate = new Date(event.start.dateTime || event.start.date);
-  const endDate = new Date(event.end.dateTime || event.end.date);
+  const startDate = new Date(event.start.dateTime || event.start.date || new Date());
+  const endDate = new Date(event.end.dateTime || event.end.date || new Date());
 
   // First, check if we already analyzed this event
   const existing = await prisma.analyzedEvent.findUnique({

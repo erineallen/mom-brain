@@ -3,7 +3,7 @@
 
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { TaskList } from "@/components/TaskList"
 
 interface Task {
@@ -68,34 +68,7 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<TaskGroups | null>(null)
   const [lastAnalyzed, setLastAnalyzed] = useState<Date | null>(null)
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login")
-    }
-  }, [status, router])
-
-  useEffect(() => {
-    if (session?.accessToken) {
-      fetchCalendars()
-      fetchExistingTasks() // Get any previously analyzed tasks
-    }
-  }, [session])
-
-  // Fetch events after calendars are loaded
-  useEffect(() => {
-    if (calendars.length > 0 && selectedCalendars.length > 0) {
-      fetchCalendarEvents()
-    }
-  }, [calendars, selectedCalendars])
-
-  // Auto-analyze when events are loaded
-  useEffect(() => {
-    if (events.length > 0 && !analyzing && !lastAnalyzed) {
-      analyzeEvents()
-    }
-  }, [events])
-
-  const fetchCalendars = async () => {
+  const fetchCalendars = useCallback(async () => {
     try {
       const response = await fetch("/api/calendar/list")
       if (response.ok) {
@@ -115,9 +88,9 @@ export default function Dashboard() {
     } catch (err) {
       console.error("Error fetching calendars:", err)
     }
-  }
+  }, [])
 
-  const fetchCalendarEvents = async () => {
+  const fetchCalendarEvents = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -150,9 +123,9 @@ export default function Dashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedCalendars])
 
-  const fetchExistingTasks = async () => {
+  const fetchExistingTasks = useCallback(async () => {
     try {
       const response = await fetch("/api/calendar/analyze")
       if (response.ok) {
@@ -162,9 +135,9 @@ export default function Dashboard() {
     } catch (err) {
       console.error("Error fetching tasks:", err)
     }
-  }
+  }, [])
 
-  const analyzeEvents = async () => {
+  const analyzeEvents = useCallback(async () => {
     if (events.length === 0) return
     
     setAnalyzing(true)
@@ -184,38 +157,44 @@ export default function Dashboard() {
       if (response.ok) {
         setTasks(data.tasks)
         setLastAnalyzed(new Date())
-        console.log(`✅ Analysis complete:`, {
-          analyzed: data.analyzed,
-          tasksThisWeek: data.summary?.tasksThisWeek,
-          totalTasks: data.summary?.totalTasks
-        })
+        console.log("Analysis completed successfully")
       } else {
-        // Better error logging
-        console.error("❌ Analysis failed:", {
-          status: response.status,
-          error: data.error,
-          details: data.details,
-          fullResponse: data
-        })
-        
-        // Show error to user
-        setError(`Analysis failed: ${data.error || 'Unknown error'}`)
-        
-        // Common issues to check
-        if (response.status === 500) {
-          console.error("Server error - check your API logs for details")
-        }
-        if (data.error?.includes("ANTHROPIC_API_KEY")) {
-          console.error("API Key issue - check your .env.local file")
-        }
+        throw new Error(data.error || "Analysis failed")
       }
     } catch (err) {
-      console.error("❌ Error analyzing events:", err)
-      setError("Failed to analyze calendar events")
+      console.error("Analysis error:", err)
+      setError(err instanceof Error ? err.message : "Analysis failed")
     } finally {
       setAnalyzing(false)
     }
-  }
+  }, [events])
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login")
+    }
+  }, [status, router])
+
+  useEffect(() => {
+    if (session?.accessToken) {
+      fetchCalendars()
+      fetchExistingTasks() // Get any previously analyzed tasks
+    }
+  }, [session, fetchCalendars, fetchExistingTasks])
+
+  // Fetch events after calendars are loaded
+  useEffect(() => {
+    if (calendars.length > 0 && selectedCalendars.length > 0) {
+      fetchCalendarEvents()
+    }
+  }, [calendars, selectedCalendars, fetchCalendarEvents])
+
+  // Auto-analyze when events are loaded
+  useEffect(() => {
+    if (events.length > 0 && !analyzing && !lastAnalyzed) {
+      analyzeEvents()
+    }
+  }, [events, analyzing, lastAnalyzed, analyzeEvents])
 
   const handleTaskComplete = async (taskId: string) => {
     try {

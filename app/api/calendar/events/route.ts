@@ -19,6 +19,13 @@ interface CalendarEvent {
   calendarColor?: string
 }
 
+interface GoogleCalendarItem {
+  id: string
+  summary: string
+  backgroundColor?: string
+  primary?: boolean
+}
+
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
@@ -64,11 +71,11 @@ export async function GET(request: Request) {
     const calendarsData = await calendarsResponse.json()
     const calendars = calendarsData.items || []
     
-    console.log("Available calendars:", calendars.map(c => ({ id: c.id, summary: c.summary })))
+    console.log("Available calendars:", calendars.map((c: GoogleCalendarItem) => ({ id: c.id, summary: c.summary })))
     
     // Create a map of calendar details
     const calendarMap = new Map()
-    calendars.forEach((cal: any) => {
+    calendars.forEach((cal: GoogleCalendarItem) => {
       calendarMap.set(cal.id, {
         summary: cal.summary,
         backgroundColor: cal.backgroundColor || '#4285F4',
