@@ -6,7 +6,7 @@ import { updateTaskStatus } from "@/lib/db/tasks";
 
 export async function POST(
   request: Request,
-  { params }: { params: { taskId: string } }
+  { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -15,7 +15,8 @@ export async function POST(
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const task = await updateTaskStatus(params.taskId, 'dismissed');
+    const { taskId } = await params;
+    const task = await updateTaskStatus(taskId, 'dismissed');
     
     return NextResponse.json({ success: true, task });
   } catch (error) {
