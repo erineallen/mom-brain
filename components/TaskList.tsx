@@ -97,10 +97,10 @@ export function TaskList({ tasks, onTaskComplete, onTaskDismiss }: TaskListProps
           onClick={() => toggleSection(sectionKey)}
           className="w-full flex items-center justify-between mb-3 text-left hover:bg-gray-50 p-2 rounded transition-colors"
         >
-          <h3 className={`text-lg font-semibold ${isOverdue ? 'text-red-700' : 'text-gray-900'}`}>
+          <h3 className={`text-lg font-semibold ${isOverdue ? 'text-red-700' : 'text-black'}`}>
             {title} ({tasks.length})
           </h3>
-          <span className="text-gray-600 text-xl font-bold">
+          <span className="text-black text-xl font-bold">
             {expandedSections[sectionKey] ? '−' : '+'}
           </span>
         </button>
@@ -116,17 +116,17 @@ export function TaskList({ tasks, onTaskComplete, onTaskDismiss }: TaskListProps
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-lg">{getTypeIcon(task.type)}</span>
-                      <h4 className="font-semibold text-gray-900">{task.title}</h4>
+                      <h4 className="font-semibold text-black">{task.title}</h4>
                       <span className={`text-xs px-2 py-1 rounded font-medium ${getPriorityColor(task.priority)}`}>
                         {task.priority}
                       </span>
                     </div>
                     
                     {task.description && (
-                      <p className="text-sm text-gray-700 mb-2">{task.description}</p>
+                      <p className="text-sm text-black mb-2">{task.description}</p>
                     )}
                     
-                    <div className="flex items-center gap-4 text-xs text-gray-600">
+                    <div className="flex items-center gap-4 text-xs text-black">
                       <span className="font-medium">📅 {formatDate(task.dueDate)}</span>
                       <span className="font-medium">For: {task.analyzedEvent.eventTitle}</span>
                       <span className="font-medium">
@@ -145,7 +145,7 @@ export function TaskList({ tasks, onTaskComplete, onTaskDismiss }: TaskListProps
                     </button>
                     <button
                       onClick={() => onTaskDismiss(task.id)}
-                      className="text-gray-600 hover:bg-gray-100 p-2 rounded transition-colors font-bold text-lg"
+                      className="text-black hover:bg-gray-100 p-2 rounded transition-colors font-bold text-lg"
                       title="Dismiss"
                     >
                       ✕
@@ -168,10 +168,9 @@ export function TaskList({ tasks, onTaskComplete, onTaskDismiss }: TaskListProps
       {renderTaskSection('Later', tasks.later, 'later')}
       
       {tasks.overdue.length === 0 && 
-       tasks.thisWeek.length === 0 && 
        tasks.nextWeek.length === 0 && 
        tasks.later.length === 0 && (
-        <p className="text-gray-500 text-center py-8">
+        <p className="text-black text-center py-8">
           No tasks suggested yet. Your calendar will be analyzed shortly...
         </p>
       )}

@@ -9,14 +9,14 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8 p-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold">Life Planner</h2>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-black">
             Sign in to access your personal assistant
           </p>
         </div>
         
         <button
           onClick={() => signIn("google", { callbackUrl: "/" })}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-black"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path

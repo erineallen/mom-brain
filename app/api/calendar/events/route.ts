@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     // Parse query parameters
     const { searchParams } = new URL(request.url)
     const calendarsParam = searchParams.get('calendars')
-    const daysParam = searchParams.get('days') || '14'
+    const daysParam = searchParams.get('days') || '120'
     
     const selectedCalendars = calendarsParam ? calendarsParam.split(',') : ['primary']
     const days = parseInt(daysParam)

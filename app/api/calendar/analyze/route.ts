@@ -13,7 +13,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const { events } = await request.json();
+    const { events, skipCache = false } = await request.json();
+
+    // If skipCache is true and in development, delete existing analyses first
+    if (skipCache && process.env.NODE_ENV === 'development') {
+      console.log("🔄 Skip cache enabled - will re-analyze all events");
+      // The existing upsert will handle updates automatically
+    }
     
     if (!events || !Array.isArray(events)) {
       return NextResponse.json(

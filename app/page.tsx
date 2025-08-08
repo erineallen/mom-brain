@@ -5,6 +5,9 @@ import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useCallback } from "react"
 import { TaskList } from "@/components/TaskList"
+import { DevTools } from "../components/DevTools"
+
+
 
 interface Task {
   id: string;
@@ -68,6 +71,25 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<TaskGroups | null>(null)
   const [lastAnalyzed, setLastAnalyzed] = useState<Date | null>(null)
 
+  const handleFlushCache = async () => {
+    try {
+      const response = await fetch('/api/dev/flush', { method: 'POST' })
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Cache flushed:', data)
+        setTasks(null)
+        setLastAnalyzed(null)
+      }
+    } catch (err) {
+      console.error('Failed to flush cache:', err)
+    }
+  }
+  
+  const handleReanalyze = async (skipCache: boolean) => {
+    await analyzeEvents(skipCache)  // Pass skipCache to your analyze function
+  }
+  
+
   const fetchCalendars = useCallback(async () => {
     try {
       const response = await fetch("/api/calendar/list")
@@ -99,7 +121,7 @@ export default function Dashboard() {
       console.log("Fetching events for calendars:", calendarParam)
       
       const response = await fetch(
-        `/api/calendar/events?calendars=${calendarParam}&days=14`,
+        `/api/calendar/events?calendars=${calendarParam}&days=120`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -127,20 +149,29 @@ export default function Dashboard() {
 
   const fetchExistingTasks = useCallback(async () => {
     try {
+      console.log("Fetching existing tasks...")
       const response = await fetch("/api/calendar/analyze")
       if (response.ok) {
         const data = await response.json()
+        console.log("Fetched existing tasks:", data)
         setTasks(data.tasks)
+      } else {
+        console.error("Failed to fetch existing tasks:", response.status)
       }
     } catch (err) {
       console.error("Error fetching tasks:", err)
     }
   }, [])
 
-  const analyzeEvents = useCallback(async () => {
-    if (events.length === 0) return
+  const analyzeEvents = useCallback(async (skipCache = false) => {
+    if (events.length === 0) {
+      console.log("No events to analyze")
+      return
+    }
     
     setAnalyzing(true)
+    setError(null) // Clear any previous errors
+    
     try {
       console.log(`Starting analysis of ${events.length} events...`)
       
@@ -149,16 +180,17 @@ export default function Dashboard() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ events })
+        body: JSON.stringify({ events, skipCache })
       })
       
       const data = await response.json()
       
       if (response.ok) {
+        console.log("Analysis completed successfully", data)
         setTasks(data.tasks)
         setLastAnalyzed(new Date())
-        console.log("Analysis completed successfully")
       } else {
+        console.error("Analysis failed:", data)
         throw new Error(data.error || "Analysis failed")
       }
     } catch (err) {
@@ -191,8 +223,15 @@ export default function Dashboard() {
 
   // Auto-analyze when events are loaded
   useEffect(() => {
+    console.log("Auto-analyze effect:", { 
+      eventsLength: events.length, 
+      analyzing, 
+      lastAnalyzed: !!lastAnalyzed 
+    })
+    
     if (events.length > 0 && !analyzing && !lastAnalyzed) {
-      analyzeEvents()
+      console.log("Triggering auto-analysis...")
+      analyzeEvents(false) // Use cache by default
     }
   }, [events, analyzing, lastAnalyzed, analyzeEvents])
 
@@ -268,15 +307,15 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-8">
+      <div className="max-w-7xl mx-auto p-8 text-black">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold">Welcome, {session.user?.name}</h1>
-            <p className="text-gray-600">
+            <p className="text-black">
               Your personal assistant dashboard
               {lastAnalyzed && (
-                <span className="ml-2 text-sm">
+                <span className="ml-2 text-sm text-black">
                   (Analyzed {lastAnalyzed.toLocaleTimeString()})
                 </span>
               )}
@@ -284,7 +323,7 @@ export default function Dashboard() {
           </div>
           <button
             onClick={() => signOut()}
-            className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-lg transition"
+            className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 text-black rounded-lg transition"
           >
             Sign Out
           </button>
@@ -301,8 +340,8 @@ export default function Dashboard() {
             )}
             {!analyzing && events.length > 0 && (
               <button
-                onClick={analyzeEvents}
-                className="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
+                onClick={() => analyzeEvents()}
+                className="text-sm px-3 py-1 bg-blue-100 text-black rounded hover:bg-blue-200 transition"
               >
                 Re-analyze Events
               </button>
@@ -316,7 +355,7 @@ export default function Dashboard() {
               onTaskDismiss={handleTaskDismiss}
             />
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-black">
               {analyzing ? (
                 <div>
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -336,7 +375,7 @@ export default function Dashboard() {
             <h2 className="text-xl font-semibold">Calendar Sources</h2>
             <button
               onClick={() => setShowCalendarSelect(!showCalendarSelect)}
-              className="text-blue-600 hover:text-blue-700"
+              className="text-black hover:text-gray-700 font-medium"
             >
               {showCalendarSelect ? "Hide" : "Show"} ({selectedCalendars.length} selected)
             </button>
@@ -390,7 +429,7 @@ export default function Dashboard() {
         {/* Events List - Secondary */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">
-            Calendar Events (Next 14 Days)
+            Calendar Events (Next 4 Months)
           </h2>
           
           {loading && <p>Loading calendar events...</p>}
@@ -402,7 +441,7 @@ export default function Dashboard() {
           )}
           
           {!loading && !error && events.length === 0 && (
-            <p className="text-gray-500">
+            <p className="text-black">
               No upcoming events found in selected calendars
             </p>
           )}
@@ -422,11 +461,11 @@ export default function Dashboard() {
                       <h3 className="font-medium text-sm">
                         {event.summary || "Untitled Event"}
                       </h3>
-                      <p className="text-xs text-gray-600">
+                      <p className="text-xs text-black">
                         {formatEventDate(event)}
                       </p>
                     </div>
-                    <span className="text-xs text-gray-500 ml-2">
+                    <span className="text-xs text-black ml-2">
                       {event.calendarSummary}
                     </span>
                   </div>
@@ -436,6 +475,11 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+      <DevTools 
+        onFlushCache={handleFlushCache}
+        onReanalyze={handleReanalyze}
+        isAnalyzing={analyzing}
+      />
     </div>
   )
 }

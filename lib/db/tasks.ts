@@ -27,8 +27,9 @@ export async function saveAnalyzedEvent(
     include: { tasks: true }
   });
 
-  // If event exists and hasn't changed (you could check etag here), skip
-  if (existing) {
+  // If event exists and we're not forcing a re-analysis, skip
+  // (This prevents unnecessary re-analysis on every load)
+  if (existing && !analysis.forceReanalysis) {
     return existing;
   }
 
