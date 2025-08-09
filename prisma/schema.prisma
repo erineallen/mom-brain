@@ -62,16 +62,6 @@ model VerificationToken {
 }
 
 // New models for the Life Planner functionality
-model Household {
-  id   String @id @default(cuid())
-  name String
-
-  users          User[]
-  analyzedEvents AnalyzedEvent[]
-  suggestedTasks SuggestedTask[]
-
-  createdAt DateTime @default(now())
-}
 
 model AnalyzedEvent {
   id          String    @id @default(cuid())
@@ -123,4 +113,76 @@ model SuggestedTask {
 
   @@index([householdId, status, dueDate])
   @@index([analyzedEventId])
+}
+
+
+
+model Household {
+  id            String    @id @default(cuid())
+  name          String
+  
+  users         User[]
+  analyzedEvents AnalyzedEvent[]
+  suggestedTasks SuggestedTask[]
+  settings      HouseholdSettings?
+  knowledgeBase KnowledgeBase[]
+  
+  createdAt     DateTime  @default(now())
+}
+
+model HouseholdSettings {
+  id            String    @id @default(cuid())
+  household     Household @relation(fields: [householdId], references: [id])
+  householdId   String    @unique
+  
+  // Calendar settings
+  selectedCalendars String?  // JSON array of calendar IDs
+  
+  // Location settings
+  homeCity      String?
+  homeState     String?
+  homeCountry   String?
+  workAddress   String?
+  
+  // Family settings
+  familyMembers String?   // JSON array of family members
+  
+  // Timing preferences
+  bookFlightsDaysAhead  Int @default(60)
+  bookSitterDaysAhead   Int @default(14)
+  bookHotelsDaysAhead   Int @default(30)
+  
+  // Sitter settings
+  defaultSitterNeeded   Boolean @default(true)
+  sitterStartTime       Int     @default(18)
+  sitterExceptions      String? // JSON array
+  
+  // Travel settings
+  drivingRadiusMiles    Int     @default(50)
+  preferredAirports     String? // JSON array
+  
+  // AI Context
+  customContext         String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model KnowledgeBase {
+  id            String    @id @default(cuid())
+  household     Household @relation(fields: [householdId], references: [id])
+  householdId   String
+  
+  category      String    // "location", "person", "pattern", "preference"
+  key           String    // "Winchester", "book club", "gym"
+  value         Json      // {means: "mom's house", noSitter: true, travel: false}
+  
+  confidence    Float     @default(1.0)
+  learnedFrom   String?   // "user_taught", "inferred", "corrected"
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@unique([householdId, category, key])
+  @@index([householdId, category])
 }

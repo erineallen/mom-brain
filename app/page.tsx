@@ -4,6 +4,7 @@
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useCallback } from "react"
+import Link from "next/link"
 import { TaskList } from "@/components/TaskList"
 import { DevTools } from "../components/DevTools"
 
@@ -309,6 +310,20 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-8 text-black">
         {/* Header */}
+        <div className="flex gap-2">
+      <Link
+        href="/settings"
+        className="px-4 py-2 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg transition"
+      >
+        ⚙️ Settings
+      </Link>
+      <button
+        onClick={() => signOut()}
+        className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-lg transition"
+      >
+        Sign Out
+      </button>
+    </div>
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold">Welcome, {session.user?.name}</h1>

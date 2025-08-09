@@ -69,17 +69,30 @@ export async function saveAnalyzedEvent(
   });
 
   // Create new suggested tasks
+  const tasksToCreate = analysis.tasks || analysis.suggestedTasks || [];
   const tasks = await Promise.all(
-    analysis.suggestedTasks.map(task => {
-      const dueDate = new Date(startDate);
-      dueDate.setDate(dueDate.getDate() - task.daysBeforeEvent);
+    tasksToCreate.map(task => {
+      // Handle different task date formats
+      let dueDate: Date;
+      if (task.daysBeforeEvent) {
+        // Old format: days before event
+        dueDate = new Date(startDate);
+        dueDate.setDate(dueDate.getDate() - task.daysBeforeEvent);
+      } else if (task.dueDate) {
+        // New format: ISO date string
+        dueDate = new Date(task.dueDate);
+      } else {
+        // Default: 1 day before event
+        dueDate = new Date(startDate);
+        dueDate.setDate(dueDate.getDate() - 1);
+      }
 
       return prisma.suggestedTask.create({
         data: {
           analyzedEventId: analyzedEvent.id,
           householdId,
           title: task.title,
-          description: task.description,
+          description: task.description || '',
           type: task.type,
           priority: task.priority,
           dueDate,

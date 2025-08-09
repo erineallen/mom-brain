@@ -31,6 +31,11 @@ export async function POST(request: Request) {
     // Get or create household for the user
     const household = await getOrCreateHousehold(session.user.id);
 
+    // TODO: Get household settings and knowledge base for better analysis
+    // For now, using undefined until Prisma client types are resolved
+    const settings = undefined;
+    const knowledgeBase = undefined;
+
     // Filter to only analyze future events and events from the last week
     // (recent past events might still need tasks)
     const relevantEvents = events.filter(event => {
@@ -40,14 +45,17 @@ export async function POST(request: Request) {
       return eventDate >= weekAgo;
     });
 
-    console.log(`Analyzing ${relevantEvents.length} relevant events...`);
+    // Limit to 10 events to avoid rate limiting issues
+    const eventsToAnalyze = relevantEvents.slice(0, 10);
+    
+    console.log(`Analyzing ${eventsToAnalyze.length} relevant events (limited from ${relevantEvents.length} total)...`);
 
     // Analyze events with AI
-    const analysisResults = await analyzeBatchEvents(relevantEvents);
+    const analysisResults = await analyzeBatchEvents(eventsToAnalyze, settings, knowledgeBase);
     
     // Save to database
     const savedEvents = [];
-    for (const event of relevantEvents) {
+    for (const event of eventsToAnalyze) {
       const analysis = analysisResults.get(event.id);
       if (analysis) {
         const saved = await saveAnalyzedEvent(household.id, event, analysis);
